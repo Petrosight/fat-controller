@@ -1,0 +1,191 @@
+#!/bin/sh
+#
+# Start/stop the FatController daemon
+#
+# fatcontrollerd start|stop|status|restart (cfg file)
+#
+# Example 1:
+#    Run using default config in /etc/fatcontroller 
+#
+#    fatcontrollerd start
+#    fatcontrollerd stop
+#
+# Example 2:   
+#    Run using config from a specified file
+#
+#    fatcontrollerd start /etc/fatcontroller/myjob.cfg
+#    fatcontrollerd stop /etc/fatcontroller/myjob.cfg
+#
+# Nick Giles
+# Bug reports to <info@4pmp.com>
+
+
+build_parameters()
+{
+    if test -n "$PROC_RUN_TIME_WARN"
+    then
+        P_PROC_RUN_TIME_WARN="--proc-run-time-warn ${PROC_RUN_TIME_WARN}"
+    else
+        P_PROC_RUN_TIME_WARN=""
+    fi
+    
+    if test -n "$PROC_RUN_TIME_MAX"
+    then
+        P_PROC_RUN_TIME_MAX="--proc-run-time-max ${PROC_RUN_TIME_MAX}"
+    else
+        P_PROC_RUN_TIME_MAX=""
+    fi
+    
+    if test -n "$PROC_TERM_TIMEOUT"
+    then
+        P_PROC_TERM_TIMEOUT="--proc-term-timeout ${PROC_TERM_TIMEOUT}"
+    else
+        P_PROC_TERM_TIMEOUT=""
+    fi
+    
+    if test -n "$FIXED_INTERVAL_WAIT"
+    then
+        P_FIXED_INTERVAL_WAIT="--fixed-interval-wait ${FIXED_INTERVAL_WAIT}"
+    else
+        P_FIXED_INTERVAL_WAIT=""
+    fi
+    
+    if test -n "$ERR_LOG_FILE"
+    then
+        P_ERR_LOG_FILE="--err-log-file ${ERR_LOG_FILE}"
+    else
+        P_ERR_LOG_FILE=""
+    fi
+    
+    if test "$APPEND_THREAD_ID" = 1
+    then
+        P_APPEND_THREAD_ID="--append-thread-id"
+    else
+        P_APPEND_THREAD_ID=""
+    fi
+    
+    if test "$RUN_ONCE" = 1
+    then
+        P_RUN_ONCE="--run-once"
+    else
+        P_RUN_ONCE=""
+    fi
+    if test -n "$LOG_FORMAT"
+    then
+        P_LOG_FORMAT="--log-format \"${LOG_FORMAT}\""
+    else
+        P_LOG_FORMAT=""
+    fi
+    
+	case "${THREAD_MODEL}" in
+        INDEPENDENT)
+            THREAD_MODEL="--independent-threads";
+            ;;
+        FIXED)
+            THREAD_MODEL="--fixed-interval-threads";
+            ;;
+        *)
+            THREAD_MODEL="";
+            ;;
+    esac
+}
+
+fatcontroller_start()
+{
+    echo "Starting"
+    ${APPLICATION} --log-file "${LOG_FILE}" ${LOG_FORMAT} --command "${COMMAND}" --arguments "${ARGUMENTS}" --working-directory "${WORKING_DIRECTORY}" --pid-file "${PID_FILE}" --sleep ${SLEEP} --sleep-on-error ${SLEEP_ON_ERROR} --threads ${THREADS} --daemonise --daemon-name "${APPLICATION_NAME}" ${DEBUG_OPTION} ${THREAD_MODEL} ${P_PROC_RUN_TIME_WARN} ${P_PROC_RUN_TIME_MAX} ${P_PROC_TERM_TIMEOUT} ${P_FIXED_INTERVAL_WAIT} ${P_APPEND_THREAD_ID} ${P_ERR_LOG_FILE} ${P_RUN_ONCE}
+    RETVAL=$?
+    if [ $RETVAL -eq 0 ]
+    then
+        echo "OK"
+    else
+        echo "FAIL"
+        exit 1
+    fi
+}
+
+fatcontroller_stop()
+{
+    echo "Stopping..."
+    if [ -f "${PID_FILE}" ]
+    then
+        kill -15 `cat ${PID_FILE}` > /dev/null 2>&1
+        if [ $? -eq 0 ]
+        then
+            rm -f ${PID_FILE}
+            echo "OK"
+        else
+            echo "FAIL"
+            exit 1
+        fi
+    else
+        echo "Wasn't running"
+        exit 1
+    fi
+}
+
+fatcontroller_status()
+{
+    if [ -f "${PID_FILE}" ]
+    then
+        kill -0 `cat ${PID_FILE}` > /dev/null 2>&1
+        if [ $? -eq 0 ]
+        then
+            echo "Running"
+        else
+            echo "Not running, but found pid file - perhaps the process passed away?"
+            exit 1
+        fi
+    else
+        echo "Not running"
+        exit 1
+    fi
+}
+
+DEBUG_OPTION=""
+
+# See if a specific cfg file was specified as the second parameter
+if [ "$2" ]
+then
+    CFG_FILE=$2
+else
+    CFG_FILE="/etc/fatcontroller"
+fi
+
+# Try and open the cfg file
+if [ -f "${CFG_FILE}" ]
+then
+    . ${CFG_FILE}
+else
+    echo "Cannot read configuration file"
+    exit 1
+fi
+
+# Build parameters based on config
+build_parameters
+
+if [ `id -u` -ne 0 ]; then
+	echo "You need root privileges to run this script"
+	exit 1
+fi
+
+# Decide what to do
+case "$1" in
+start)      fatcontroller_start
+            ;;
+stop)       fatcontroller_stop
+            ;;
+restart)    fatcontroller_stop
+            fatcontroller_start
+            ;;
+status)     fatcontroller_status
+            ;;
+debug)      DEBUG_OPTION="--debug"
+            fatcontroller_start
+            ;;
+*)          echo "Oh dear"
+            exit 2
+            ;;
+esac
+
+exit 0

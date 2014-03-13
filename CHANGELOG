@@ -1,0 +1,205 @@
+FatController - Changelog
+Copyright (C) 2010-2011 Nicholas Giles
+
+* 0.0.5 2013-07-31 Nick Giles
+
+This release doesn't contain any new features, but contains many improvements
+under the bonnet - better code, memory management and some bug fixes.
+Notable changes include:
+
+- The -l parameter is now required
+- Minor changes to how CLI options are handled and logging messages
+- BUGFIX for independent thread model parameter in Shell script
+- Corrected handling of stdout, sterr and stdin when daemonising
+- BUGFIX of truncated output from sub-processes
+
+
+* 0.0.4 2011-12-22 Nick Giles
+
+The main aim for this release was to fully support the "daemonise anything"
+point of the Fat Controller raison d'etere.
+
+Prior to this release, output from sub-processes was collected and then written
+to the log file only once the process had ended.   This was bad for two
+reasons:
+- it only logs output on STDOUT, anything on STDERR is ignored
+- no good for long-running daemon processes as nothing is logged until it ends
+
+The Fat Controller now continually monitors STDOUT and STDERR of all
+sub-processes and immediately writes anything to the log file.
+
+ADDED --err-log-file
+In fact, it is even possible to specify separate log files for STDOUT and
+STDERR using the --err-log-file argument.
+
+ADDED --run-once argument
+Also to support daemon processes, using the --run-once argument it is possible
+to tell The Fat Controller to, (cunningly) run a process only once and then
+end.   For example, if you have a server application written in Java and you
+want to run it as a daemon, then The Fat Controller can daemonise it and when
+it shuts down the Fat Controller will not restart but instead also shut down.
+
+Another, perhaps less important change is that resources are correctly freed
+when The Fat Controller exits.   (Modern)? versions of Linux will free all
+allocated resources when a process ends, but that is not necessarily true for
+all OSes (um, not sure which, but it's possible).   If there is a really
+serious error (e.g. malloc fails) then the whole process stops (calls exit())
+but I don't think that's really an issue.
+
+ADDED --test-fire
+Thanks to a great idea in a comment on the blog (http://www.4pmp.com/2011/12/th
+e-fat-controller-v0-0-4-almost-ready-testers-wanted/#comment-1245) this
+argument has been added.   If this argument is specified then The Fat
+Controller initialises but does not actually run, i.e. it does not daemonise
+(if it is specified to be in daemonise mode) nor does it run any processes.
+It is useful combined with the --debug option when testing to check arguments
+have been correctly read and interpreted.
+
+CHANGED Debug mode
+Debug mode is turned on by using the --debug argument when running The Fat
+Controller.   Previously this was added by the init script
+/etc/init.d/fatcontrollerd if the file fatcontroller.debug was found in the
+current directory.   In addition to turning on debug mode, it also looked for
+the configuration file in the current directory, and not in /etc/
+This has now been substantially simplified.   All you need to do to enable
+debug mode is instead of running the Fat Controller with:
+    sudo /etc/init.d/fatcontrollerd start
+Use:
+    sudo /etc/init.d/fatcontrollerd debug
+
+
+* 0.0.3 2011-08-14 Nick Giles
+
+This version contains many bug fixes, improvements and a major new feature;
+fixed interval thread model.   All of the bug fixes relate to issues on
+application startup, not the running stability of The Fat Controller.   
+
+BACKWARDS COMPATABILITY:
+All functionality from v0.0.2 is present in v0.0.3, it should be possible to
+install this version over an existing 0.0.2 installation - just be aware that
+the configuration file (/etc/fatcontroller) will not be overwritten by the
+installation process but it should be noted that the PATH argument has been
+deprecated and addition of the thread ID to sub-processes is now off by
+default (see below for details).
+
+All major changes are detailed below:
+
+CHANGED Thread ID argument to sub-processes
+In previous versions, the ID of the calling thread was passed to sub-processes
+via an argument to the script of the form --tid=x (where x denotes the ID of
+the thread).   This caused a problem when running PHP scripts for which no
+arguments were specified for the script.   Arguments for the script are
+separated from arguments to the PHP process via -- (two hyphens), if these
+hyphens are missing then the appended thread ID argument is interpreted as for
+the PHP pocess whih resulted in an error as it was unrecognised.   The solution
+is to end the command with -- if no arguments are specified for the script, but
+for simplicity it was decided to turn off appending the thread ID argument by
+default.
+
+ADDED Long running instance warning
+Using the --proc-run-time-warn argument, it is now possible to specify that
+a warning log be created if an instance runs longer than the specified number
+of seconds.   A zero value will result in such warnings never being written.
+Default behaviour is to write a warning after 3600s (1 hour).
+
+ADDED Long running instance termination
+Using the --proc-run-time-max argument, it is now possible to specify that
+an instance be terminated if it runs longer than the specified number of
+seconds.   Default behaviour is never to terminate processes unless the main
+Fat Controller process is requested to shutdown. (Processes terminated by
+sending SIGTERM).   It is advised to specify this argument.
+
+ADDED Termination timeout
+Using the --proc-term-timeout argument, it is now possible to specify how long
+a process has to shutdown.   If the process takes longer than the specified
+duration then the process is forced to terminate by sending the SIGKILL signal.
+Time specified in seconds.   The default timeout is 30s.
+
+ADDED Fixed interval thread model
+The 'independent thread model' and 'dependent thread mode' start another
+instance of the target program a specified number of seconds after the previous
+instance ends.   The 'fixed interval thread model' starts another instance a
+specified number of seconds after the previous instance starts, hence the
+interval beteen new instances is fixed.   The interval is specified using the
+-s,--sleep argument, just as for the other thread models.   Note that the
+interval is respected even if a process returns status 64.   Only if a process
+returns a status of -1 will the interval specified by -e,--sleep-on-error be
+used.
+
+ADDED Fixed interval wait timeout
+In the fixed interfal thread model, there are two conflicting requirements;
+first is to start a new instance every n seconds.   The second is the maximum
+allowed number of running instances (or in Fat Controller parlance - threads*).
+The Fat Controller will attempt to stick to the schedule as best as possible
+but if sub-processes run too long and the maximum number of threads is reached
+then it will wait until one sub-process ends, thus freeing a thread and
+allowing The Fat Controller to run a new sub-process.   If you cannot wait,
+then you can use the --fixed-interval-wait argument to specify how long to
+wait.   If a sub-process ends and a thread becomes free then a new sub-process
+will be run immediately.   If no free thread is available after the timeout
+then The Fat Controller will send SIGTERM to the "oldest" (or longest running)
+sub-process.   Then, once a thread becomes free a new sub-process will be run.
+A value of -1 means The Fat Controller will wait indefinitely for a free
+thread, this is the default behaviour.   A value of 0 will mean The Fat
+Controller will not wait and immediately send SIGTERM to the oldest
+sub-process.
+Note that there may be a delay in terminating the thread, for example if the
+sub-process' shutdown gets stuck and takes too long.   This can be mitigated
+to some extent using --proc-term-timeout.   
+
+* The word "thread" is used because although instances of the target program
+run in their own process, The Fat Controller dedicates a thread to each which
+waits for the process to end.   Although currently these
+threads don't do anything while the child is running, it is planned to
+continually read from the pipe connected to the child process' STDOUT and
+STDERR and log the data, rather than at the moment where it reads and logs
+everything once the program has finished.   (This is of high priority for the
+next release).
+
+DEPRECATED -p, --path
+This argument is no longer required, the full path to the target program can be
+specified with -c,--command.
+
+IMPROVED SHUTDOWN
+
+A SIGHUP signal works as its original intention - hangup.   It simply resets
+all running sub-processes by sending them SIGTERM.   The Fat Controller will
+then continue as normal.
+
+SIGINT, SIGTERM and SIGQUIT will tell The Fat Controller to begin shutting
+down.   After receiving any of these signals, no new sub-processes are created
+and The Fat Controller waits for all currently running sub-processes to end
+before ending itself.   If any of these signals are received again then The Fat
+Controller will speed up the shutdown process by sending all sub-processes
+still running SIGTERM.   Sub-processes are then subject to the set termination
+timeout.   If a third such signal is received then The Fat Controller will send
+all running sub-processes SIGKILL and end.
+
+* 0.0.2 2011-01-23 Nick Giles
+In application mode, The Fat Controller will stop when a child process returns
+an exit status other than 64 (64 means ok and there is still work to be done).
+If in independent thread mode, it will wait until all threads return a value
+other than 64, threads that have already returned 64 will remain sleeping.
+In dependent thread mode, the first thread to return a value other than 64 will
+cause The Fat Controller to end.
+In all cases, threads that have currently running child processes are left to
+run.
+This DOES NOT affect the behaviour of The Fat Controller when running as a
+daemon.
+
+When a SIGINT is sent to The Fat Controller, it will stop creating threads and
+wait for threads with runing child processes to end.   Now, if The Fat
+Controller receives another signal (SIGTERM, SIGQUIT or SIGINT) then it will
+forcibly terminate running threads and end execution without waiting.
+(Not that at any point you can send a SIGTERM or SIGQUIT signal which will
+forcibly end execution of threads.)
+
+When a SIGHUP is sent to The Fat Controller, it will stop creating new threads
+and wait for all currently running threads to stop before resuming normal
+operation.   As above, if a SIGTERM, SIGQUIT or SIGINT signal is received
+whilst waiting for these threads to finsh, it will forcibly terminate them
+and then resume normal operation.
+    - You might wonder what this is good for, but it provides a way to kill
+threads whose processes have become unresponsive.   Ok, s you could just
+restart the whole application, but in case you didn't want to, then this
+provides an alternative.

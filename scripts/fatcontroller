@@ -1,0 +1,60 @@
+# ---------------------------
+# FatController user settings
+# ---------------------------
+#
+# See http://fat-controller.sourceforge.net/manual.html#configuration
+
+
+APPLICATION_NAME="fatcontroller"
+
+WORKING_DIRECTORY="/var/www/mywebapp/scripts/"
+
+COMMAND="/usr/bin/php"
+
+ARGUMENTS="-f sleep.php"
+
+# Make sure the log file exists and has correct permissions
+LOG_FILE="/var/log/${APPLICATION_NAME}.log"
+
+# Uncomment the line below to log STDERR into a separate file (check correct
+# write permissions)
+#ERR_LOG_FILE="/var/log/${APPLICATION_NAME}.err"
+
+SLEEP=30
+
+SLEEP_ON_ERROR=300
+
+THREADS=1
+
+# Thread models: DEPENDENT, INDEPENDENT, FIXED
+THREAD_MODEL=DEPENDENT
+
+# Zero means disables warning
+PROC_RUN_TIME_WARN=3600
+
+# Zero means disables max execution duration
+PROC_RUN_TIME_MAX=0
+
+PROC_TERM_TIMEOUT=30
+
+# Only used in FIXED thread model (-1 means will wait indefinitely and is
+# default if not specified)
+FIXED_INTERVAL_WAIT=-1
+
+# If using this and running php and your script doesn't take any arguments
+# itself, make sure the ARGUMENTS fields ends with -- (two hyphens)
+APPEND_THREAD_ID=0
+
+# Setting this to 1 will mean that the script will be run once, and once only,
+# regardless of any other settings.   Useful when daemonising something.
+RUN_ONCE=0
+
+# ---------------
+# System settings
+# ---------------
+
+# Make sure the pid file exists and has correct permissions (on production
+# servers it's best to use /var/run/)
+PID_FILE="/tmp/${APPLICATION_NAME}.pid"
+
+APPLICATION="/usr/local/bin/fatcontroller"

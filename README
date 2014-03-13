@@ -1,0 +1,33 @@
+FatController - Parallel execution handler
+Copyright (C) 2010-2011 Nicholas Giles
+
+What is it?
+-----------
+
+The Fat Controller is used to repeatedly run other programs, usually scripts, a
+bit like CRON.   Unlike CRON, it is able to run many instances of a program or
+script in parallel making it ideal for executing scripts that process queues or
+perform tasks which must be repeated.
+
+The Fat Controller was originally written to run PHP scripts as PHP has
+somewhat limited and rather creaky support for process control, but can be used
+to run anything.
+
+
+Installation:
+-------------
+
+make
+sudo make install
+
+
+Licensing
+---------
+
+Please see the file called LICENCE.
+
+
+More information, documentation, latest release:
+------------------------------------------------
+
+http://fat-controller.sourceforge.net/
