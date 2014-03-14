@@ -175,7 +175,7 @@ static const char *LOG_FORMAT = NULL;
         if (processOptions(argc, argv, ap_settings, dm_settings, dp_settings) == 0)
         {
             /* Show startup options (if in debug mode */
-            showStartupOptions(ap_settings, dm_settings, dp_settings);
+            //if (ap_settings->debug) showStartupOptions(ap_settings, dm_settings, dp_settings);
             
             /* Setup system logging */
             setupSyslog(
@@ -184,7 +184,7 @@ static const char *LOG_FORMAT = NULL;
                     ap_settings->daemonise,
                     dp_settings->logformat
             );
-            
+
             /* Only run if not in test_fire mode */
             if (ap_settings->test_fire == 0)
             {
@@ -216,7 +216,8 @@ static const char *LOG_FORMAT = NULL;
                 else
                 {
                     /* Start the job dispatcher - this is the main part of the application */
-                    dispatch(dp_settings, ap_settings->daemonise);
+                    //dispatch(dp_settings, ap_settings->daemonise);
+                    dispatch(dp_settings, 1);
                 } 
             }
         }

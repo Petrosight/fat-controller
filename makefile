@@ -1,12 +1,13 @@
 CC=gcc
-XXXCFLAGS=-Wall -Wextra -W-pedantic
+XXXCFLAGS=-Wall -Wextra
 CFLAGS=-g -I. $(XXXCFLAGS)
 DEPS = fatcontroller.h daemonise.h jobdispatching.h dgetopts.h sfmemlib.h subprocslog.h
 OBJ = ${DEPS:.h=.o}
 LIBS=-lpthread
 TARGET=/usr/local/bin
-INITD=/etc/init.d
-ETC=/etc
+INIT=/etc/init
+ETC=/etc/fatcontroller.d
+EXAMPLE_CONFIG=service.fat.example
 RM=rm -f
 MV=mv -f
 CP=cp -f
@@ -23,9 +24,17 @@ clean:
 
 install: fatcontroller
 	@$(CP) fatcontroller $(TARGET)
-	# @$(CP) ./scripts/fatcontrollerd $(INITD)
-	# @if [ ! -e $(ETC)/fatcontroller ]; then \
-	# 	$(CP) -f ./scripts/fatcontroller $(ETC); \
-	# fi
-	# @chmod 755 $(INITD)/fatcontrollerd
+	@$(CP) ./scripts/fatcontrollerd $(TARGET)
+	@if [ ! -e $(ETC) ]; then \
+		mkdir -p ${ETC}; \
+	fi
+	
+	@if [ ! -e ${ETC}/${EXAMPLE_CONFIG} ]; then \
+		$(CP) -f ./scripts/${EXAMPLE_CONFIG} $(ETC); \
+	fi
+	
+	@${CP} -f ./scripts/fatcontroller.ubuntu ${INIT}/fatcontroller.conf
+	@${CP} -f ./scripts/fatcontroller-job.ubuntu ${INIT}/fatcontroller-job.conf
+	
+	@chmod 755 $(TARGET)/fatcontrollerd
 	@echo "The FatController has been installed!"

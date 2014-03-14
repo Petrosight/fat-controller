@@ -1,0 +1,32 @@
+# fatcontroller - FatController Ubuntu Upstart File
+
+description "fatcontroller upstart"
+author "Matthew Stuart <matt.stuart@petrosight.ca>"
+
+# Stanzas
+
+# When to start the service
+start on runlevel [2345]
+
+# When to stop the service
+stop on runlevel [016]
+
+# Automatically restart process if crashed
+#respawn
+
+# Essentially lets upstart know the process will detach itself to the background
+console output
+
+# Run before process
+pre-start script
+    [ -d /etc/fatcontroller.d ] || mkdir -p /etc/fatcontroller.d
+	for conf in `find /etc/fatcontroller.d -name "*.fat" -print` ; do
+		start fatcontroller-job CONF=$conf || :
+	done
+end script
+
+post-stop script
+	for conf in `find /etc/fatcontroller.d -name "*.fat" -print` ; do
+		stop fatcontroller-job CONF=$conf || :
+	done
+end script

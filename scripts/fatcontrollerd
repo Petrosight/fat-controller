@@ -34,7 +34,7 @@ build_parameters()
         P_PROC_RUN_TIME_MAX="--proc-run-time-max ${PROC_RUN_TIME_MAX}"
     else
         P_PROC_RUN_TIME_MAX=""
-    fi
+    fi 
     
     if test -n "$PROC_TERM_TIMEOUT"
     then
@@ -70,11 +70,8 @@ build_parameters()
     else
         P_RUN_ONCE=""
     fi
-    if test -n "$LOG_FORMAT"
-    then
-        P_LOG_FORMAT="--log-format \"${LOG_FORMAT}\""
-    else
-        P_LOG_FORMAT=""
+    if ! test -n "$LOG_FORMAT"
+        LOG_FORMAT="%s"
     fi
     
 	case "${THREAD_MODEL}" in
@@ -93,7 +90,7 @@ build_parameters()
 fatcontroller_start()
 {
     echo "Starting"
-    ${APPLICATION} --log-file "${LOG_FILE}" ${LOG_FORMAT} --command "${COMMAND}" --arguments "${ARGUMENTS}" --working-directory "${WORKING_DIRECTORY}" --pid-file "${PID_FILE}" --sleep ${SLEEP} --sleep-on-error ${SLEEP_ON_ERROR} --threads ${THREADS} --daemonise --daemon-name "${APPLICATION_NAME}" ${DEBUG_OPTION} ${THREAD_MODEL} ${P_PROC_RUN_TIME_WARN} ${P_PROC_RUN_TIME_MAX} ${P_PROC_TERM_TIMEOUT} ${P_FIXED_INTERVAL_WAIT} ${P_APPEND_THREAD_ID} ${P_ERR_LOG_FILE} ${P_RUN_ONCE}
+    ${APPLICATION} --log-file "${LOG_FILE}" --log-format "${LOG_FORMAT}" --command "${COMMAND}" --arguments "${ARGUMENTS}" --working-directory "${WORKING_DIRECTORY}" --pid-file "${PID_FILE}" --sleep ${SLEEP} --sleep-on-error ${SLEEP_ON_ERROR} --threads ${THREADS} --daemonise --daemon-name "${APPLICATION_NAME}" ${DEBUG_OPTION} ${THREAD_MODEL} ${P_PROC_RUN_TIME_WARN} ${P_PROC_RUN_TIME_MAX} ${P_PROC_TERM_TIMEOUT} ${P_FIXED_INTERVAL_WAIT} ${P_APPEND_THREAD_ID} ${P_ERR_LOG_FILE} ${P_RUN_ONCE}
     RETVAL=$?
     if [ $RETVAL -eq 0 ]
     then

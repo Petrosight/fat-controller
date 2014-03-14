@@ -21,6 +21,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <syslog.h>
+#include "extern.h"
 #include "sfmemlib.h"
 
 /* 
@@ -45,7 +47,7 @@ void *sfmalloc(size_t sz)
     
     if (ret == NULL)
     {
-        fprintf(stderr, "Out of memory.\n");
+        _syslog(LOG_CRIT, "Out of memory");
         exit(EXIT_FAILURE);
     }
     
@@ -58,7 +60,7 @@ void *sfcalloc(size_t nelem, size_t elsize)
     
     if (ret == NULL)
     {
-        fprintf(stderr, "Out of memory.\n");
+        _syslog(LOG_CRIT, "Out of memory");
         exit(EXIT_FAILURE);
     }
     
@@ -71,7 +73,7 @@ void *sfrealloc(void *ptr, size_t sz)
     
     if (ret == NULL)
     {
-        fprintf(stderr, "Out of memory.\n");
+        _syslog(LOG_CRIT, "Out of memory");
         exit(EXIT_FAILURE);
     }
     

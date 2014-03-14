@@ -69,54 +69,15 @@
         }
         else if (pid > 0)
         {
-            /* Child created ok, so exit parent process */
-            printf("Child process created: %d\n", pid);
-            
             _syslog(LOG_INFO, "Daemon process started [%d]", pid);
 
             /*exit(EXIT_SUCCESS);*/
             return pid;
         }
 
-        /* Child continues */
-
+        _syslog(LOG_INFO, "Child process running..");
         umask(027); /* Set full file permissions */
 
-        /* Get a new session ID */
-        sid = setsid();
-
-        if (sid < 0)
-        {
-            /*exit(EXIT_FAILURE);*/
-            return -8;
-        }
-
-        /* close all descriptors */
-        /*
-            This section has been removed; in The Fat Controller we know that
-            there are no open resources.   If this were used as a daemonising
-            library then we could extend this function to take a function
-            pointer which if not NULL, will be called and should hhave the job
-            of closing any open file descriptors in the child process which are
-            inherited from the parent.
-        
-            for (i = getdtablesize(); i >= 0; --i)
-            {
-                if (close(i) != 0)
-                {
-                    _syslog(LOG_CRIT, "Could not close File Descriptor: %d", i);
-                    return -16;
-                }
-            }
-        */
-        /*
-            Replace with  getrlimit() and RLIMIT_NOFILE
-            http://pubs.opengroup.org/onlinepubs/007908799/xsh/getrlimit.html
-            https://publib.boulder.ibm.com/infocenter/iseries/v5r4/index.jsp?topic=/apis/getrlim.htm
-        
-            _syslog(LOG_DEBUG, "getdtablesize: %d", getdtablesize());
-        
-        */
 
         if (close(STDIN_FILENO) != 0)
         {
@@ -157,6 +118,45 @@
             return -32;
         }
         
+        
+        /* Get a new session ID */
+        sid = setsid();
+
+        if (sid < 0)
+        {
+            /*exit(EXIT_FAILURE);*/
+            return -8;
+        }
+
+        /* close all descriptors */
+        /*
+            This section has been removed; in The Fat Controller we know that
+            there are no open resources.   If this were used as a daemonising
+            library then we could extend this function to take a function
+            pointer which if not NULL, will be called and should hhave the job
+            of closing any open file descriptors in the child process which are
+            inherited from the parent.
+        
+            for (i = getdtablesize(); i >= 0; --i)
+            {
+                if (close(i) != 0)
+                {
+                    _syslog(LOG_CRIT, "Could not close File Descriptor: %d", i);
+                    return -16;
+                }
+            }
+        */
+        /*
+            Replace with  getrlimit() and RLIMIT_NOFILE
+            http://pubs.opengroup.org/onlinepubs/007908799/xsh/getrlimit.html
+            https://publib.boulder.ibm.com/infocenter/iseries/v5r4/index.jsp?topic=/apis/getrlim.htm
+        
+            _syslog(LOG_DEBUG, "getdtablesize: %d", getdtablesize());
+        
+        */
+
+        
+        
         /* change running directory */
         if (chdir(rundir) != 0)
         {
@@ -173,6 +173,7 @@
             /*exit(EXIT_FAILURE);*/
             return -2;
         }
+        _syslog(LOG_DEBUG, "Opened PID lock file %s", pidfile);
 
         /* Try to lock file */
         if (lockf(*pidfd,F_TLOCK,0) == -1)

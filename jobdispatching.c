@@ -740,7 +740,6 @@ void dispatch(struct dispatching_settings *settings, int daemon)
 
                     if (rc)
                     {
-                        printf("ERROR: return code from pthread_create() is %d\n", rc);
                         _syslog(LOG_CRIT, "ERROR: return code from pthread_create() is %d", rc);
                         exit(EXIT_FAILURE);
                     }

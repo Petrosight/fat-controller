@@ -1,0 +1,90 @@
+# fatcontroller - FatController Ubuntu Upstart File
+
+description "fatcontroller worker upstart"
+author "Matthew Stuart <matt.stuart@petrosight.ca>"
+
+#expect fork
+console log
+respawn
+instance $CONF
+
+env CONF_DIR="/etc/fatcontroller.d"
+
+script
+    if [ -f $CONF ]; then
+             CFG_FILE=$CONF
+     else
+             CFG_FILE="${CONF_DIR}/$CONF"
+     fi
+     logger -is -t "$UPSTART_JOB" "Chcking for ${CFG_FILE}"
+     if [ ! -f "${CFG_FILE}" ]; then
+         logger -is -t "$UPSTART_JOB" "Cannot read configuration file ${CFG_FILE}"
+         exit 1
+     fi
+     . $CFG_FILE
+    if test -n "$PROC_RUN_TIME_WARN"
+    then
+        P_PROC_RUN_TIME_WARN="--proc-run-time-warn ${PROC_RUN_TIME_WARN}"
+    else
+        P_PROC_RUN_TIME_WARN=""
+    fi
+
+    if test -n "$PROC_RUN_TIME_MAX"
+    then
+        P_PROC_RUN_TIME_MAX="--proc-run-time-max ${PROC_RUN_TIME_MAX}"
+    else
+        P_PROC_RUN_TIME_MAX=""
+    fi
+
+    if test -n "$PROC_TERM_TIMEOUT"
+    then
+        P_PROC_TERM_TIMEOUT="--proc-term-timeout ${PROC_TERM_TIMEOUT}"
+    else
+        P_PROC_TERM_TIMEOUT=""
+    fi
+
+    if test -n "$FIXED_INTERVAL_WAIT"
+    then
+        P_FIXED_INTERVAL_WAIT="--fixed-interval-wait ${FIXED_INTERVAL_WAIT}"
+    else
+        P_FIXED_INTERVAL_WAIT=""
+    fi
+
+    if test -n "$ERR_LOG_FILE"
+    then
+        P_ERR_LOG_FILE="--err-log-file ${ERR_LOG_FILE}"
+    else
+        P_ERR_LOG_FILE=""
+    fi
+
+    if test "$APPEND_THREAD_ID" = 1
+    then
+        P_APPEND_THREAD_ID="--append-thread-id"
+    else
+        P_APPEND_THREAD_ID=""
+    fi
+
+    if test "$RUN_ONCE" = 1
+    then
+        P_RUN_ONCE="--run-once"
+    else
+        P_RUN_ONCE=""
+    fi
+    if ! test -n "$LOG_FORMAT"
+    then
+        LOG_FORMAT="%s"
+    fi
+
+    case "${THREAD_MODEL}" in
+        INDEPENDENT)
+            THREAD_MODEL="--independent-threads";
+            ;;
+        FIXED)
+            THREAD_MODEL="--fixed-interval-threads";
+            ;;
+        *)
+            THREAD_MODEL="";
+            ;;
+    esac
+	exec ${APPLICATION} --log-file "${LOG_FILE}" --log-format "${LOG_FORMAT}" --command "${COMMAND}" --arguments "${ARGUMENTS}" --working-directory "${WORKING_DIRECTORY}" --pid-file "${PID_FILE}" --sleep ${SLEEP} --sleep-on-error ${SLEEP_ON_ERROR} --threads ${THREADS} --daemon-name "${APPLICATION_NAME}" ${DEBUG_OPTION} ${THREAD_MODEL} ${P_PROC_RUN_TIME_WARN} ${P_PROC_RUN_TIME_MAX} ${P_PROC_TERM_TIMEOUT} ${P_FIXED_INTERVAL_WAIT} ${P_APPEND_THREAD_ID} ${P_ERR_LOG_FILE} ${P_RUN_ONCE}
+end script
