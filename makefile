@@ -1,8 +1,8 @@
 CC=gcc
 XXXCFLAGS=-Wall -Wextra
 CFLAGS=-g -I. $(XXXCFLAGS)
-DEPS = fatcontroller.h daemonise.h jobdispatching.h dgetopts.h sfmemlib.h subprocslog.h
-OBJ = ${DEPS:.h=.o}
+DEPS=fatcontroller.h daemonise.h jobdispatching.h dgetopts.h sfmemlib.h subprocslog.h
+OBJ=${DEPS:.h=.o}
 LIBS=-lpthread
 TARGET=/usr/local/bin
 INIT=/etc/init
@@ -17,13 +17,16 @@ CPN=cp -n
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 fatcontroller: $(OBJ)
-	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+	@if [ ! -e ./bin/ ]; then \
+		mkdir -p ./bin/; \
+	fi
+	$(CC) -o ./bin/$@ $^ $(CFLAGS) $(LIBS)
 
 clean:
 	-${RM} fatcontroller *.o
 
 install: fatcontroller
-	@$(CP) fatcontroller $(TARGET)
+	@$(CP) ./bin/fatcontroller $(TARGET)
 	@$(CP) ./scripts/fatcontrollerd $(TARGET)
 	@if [ ! -e $(ETC) ]; then \
 		mkdir -p ${ETC}; \
