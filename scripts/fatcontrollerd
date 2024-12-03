@@ -5,12 +5,12 @@
 # fatcontrollerd start|stop|status|restart (cfg file)
 #
 # Example 1:
-#    Run using default config in /etc/fatcontroller 
+#    Run using default config in /etc/fatcontroller
 #
 #    fatcontrollerd start
 #    fatcontrollerd stop
 #
-# Example 2:   
+# Example 2:
 #    Run using config from a specified file
 #
 #    fatcontrollerd start /etc/fatcontroller/myjob.cfg
@@ -22,48 +22,55 @@
 
 build_parameters()
 {
+    if test -n "$TEST_FIRE"
+    then
+        P_TEST_FIRE="--test-fire"
+    else
+        P_TEST_FIRE=""
+    fi
+    
     if test -n "$PROC_RUN_TIME_WARN"
     then
         P_PROC_RUN_TIME_WARN="--proc-run-time-warn ${PROC_RUN_TIME_WARN}"
     else
         P_PROC_RUN_TIME_WARN=""
     fi
-    
+
     if test -n "$PROC_RUN_TIME_MAX"
     then
         P_PROC_RUN_TIME_MAX="--proc-run-time-max ${PROC_RUN_TIME_MAX}"
     else
         P_PROC_RUN_TIME_MAX=""
-    fi 
-    
+    fi
+
     if test -n "$PROC_TERM_TIMEOUT"
     then
         P_PROC_TERM_TIMEOUT="--proc-term-timeout ${PROC_TERM_TIMEOUT}"
     else
         P_PROC_TERM_TIMEOUT=""
     fi
-    
+
     if test -n "$FIXED_INTERVAL_WAIT"
     then
         P_FIXED_INTERVAL_WAIT="--fixed-interval-wait ${FIXED_INTERVAL_WAIT}"
     else
         P_FIXED_INTERVAL_WAIT=""
     fi
-    
+
     if test -n "$ERR_LOG_FILE"
     then
         P_ERR_LOG_FILE="--err-log-file ${ERR_LOG_FILE}"
     else
         P_ERR_LOG_FILE=""
     fi
-    
+
     if test "$APPEND_THREAD_ID" = 1
     then
         P_APPEND_THREAD_ID="--append-thread-id"
     else
         P_APPEND_THREAD_ID=""
     fi
-    
+
     if test "$RUN_ONCE" = 1
     then
         P_RUN_ONCE="--run-once"
@@ -71,9 +78,10 @@ build_parameters()
         P_RUN_ONCE=""
     fi
     if ! test -n "$LOG_FORMAT"
+    then
         LOG_FORMAT="%s"
     fi
-    
+
 	case "${THREAD_MODEL}" in
         INDEPENDENT)
             THREAD_MODEL="--independent-threads";
@@ -90,7 +98,7 @@ build_parameters()
 fatcontroller_start()
 {
     echo "Starting"
-    ${APPLICATION} --log-file "${LOG_FILE}" --log-format "${LOG_FORMAT}" --command "${COMMAND}" --arguments "${ARGUMENTS}" --working-directory "${WORKING_DIRECTORY}" --pid-file "${PID_FILE}" --sleep ${SLEEP} --sleep-on-error ${SLEEP_ON_ERROR} --threads ${THREADS} --daemonise --daemon-name "${APPLICATION_NAME}" ${DEBUG_OPTION} ${THREAD_MODEL} ${P_PROC_RUN_TIME_WARN} ${P_PROC_RUN_TIME_MAX} ${P_PROC_TERM_TIMEOUT} ${P_FIXED_INTERVAL_WAIT} ${P_APPEND_THREAD_ID} ${P_ERR_LOG_FILE} ${P_RUN_ONCE}
+    ${APPLICATION} --log-file "${LOG_FILE}" --log-format "${LOG_FORMAT}" --command "${COMMAND}" --arguments "${ARGUMENTS}" --working-directory "${WORKING_DIRECTORY}" --pid-file "${PID_FILE}" --sleep ${SLEEP} --sleep-on-error ${SLEEP_ON_ERROR} --threads ${THREADS} --daemonise --daemon-name "${APPLICATION_NAME}" ${DEBUG_OPTION} ${THREAD_MODEL} ${P_PROC_RUN_TIME_WARN} ${P_PROC_RUN_TIME_MAX} ${P_PROC_TERM_TIMEOUT} ${P_FIXED_INTERVAL_WAIT} ${P_APPEND_THREAD_ID} ${P_ERR_LOG_FILE} ${P_RUN_ONCE} ${P_TEST_FIRE}
     RETVAL=$?
     if [ $RETVAL -eq 0 ]
     then
@@ -180,9 +188,10 @@ status)     fatcontroller_status
 debug)      DEBUG_OPTION="--debug"
             fatcontroller_start
             ;;
-*)          echo "Oh dear"
+*)          logger -s -t fatcontroller "Invalid command $1"
             exit 2
             ;;
 esac
 
 exit 0
+
